@@ -9,6 +9,9 @@ import (
 type SpecialString interface {
 }
 
+type SpecialInt interface {
+}
+
 type TestStruct struct {
 	Dep1 string        `inject`
 	Dep2 SpecialString `inject`
@@ -109,4 +112,31 @@ func Test_InjectorSetParent(t *testing.T) {
 	injector2.SetParent(injector)
 
 	expect(t, injector2.Get(inject.InterfaceOf((*SpecialString)(nil))).IsValid(), true)
+}
+
+func Test_InjectorProvider(t *testing.T) {
+	injector := inject.New()
+	strProvider := func() SpecialString {
+		return SpecialString("value")
+	}
+	injector.MapProviderTo(strProvider, (*SpecialString)(nil))
+	injector.Invoke(func(str SpecialString) {
+		expect(t, str, "value")
+	})
+}
+
+func Test_InjectorProviderCache(t *testing.T) {
+	injector := inject.New()
+	i := 0
+	numberProvider := func() int {
+		i++
+		return i
+	}
+	injector.MapProviderTo(numberProvider, (*SpecialInt)(nil))
+	injector.Invoke(func(n SpecialInt) {
+		expect(t, n, 1)
+	})
+	injector.Invoke(func(n SpecialInt) {
+		expect(t, n, 1)
+	})
 }
